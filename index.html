@@ -1,0 +1,1217 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SILKYSINGZ GEOAI | Education Accessibility Intelligence</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+<style>
+:root {
+  --navy:#123c69;
+  --blue:#1769aa;
+  --background:#f2f6fb;
+  --border:#d6dfeb;
+  --text:#1c2938;
+  --muted:#627187;
+  --green:#16845b;
+  --red:#c83b42;
+}
+* { box-sizing:border-box }
+html,body {
+  margin:0;width:100%;height:100%;
+  font-family:Arial,Helvetica,sans-serif;color:var(--text)
+}
+body { background:var(--background);overflow:hidden }
+header {
+  min-height:76px;padding:10px 18px;background:var(--navy);color:#fff;
+  display:flex;align-items:center;justify-content:space-between;gap:12px
+}
+.brand { font-size:20px;font-weight:800 }
+.subtitle { font-size:12px;margin-top:5px;opacity:.92 }
+.header-right { text-align:right;font-size:12px;line-height:1.5 }
+
+main {
+  height:calc(100vh - 116px);
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;padding:10px;min-height:0
+}
+.panel {
+  background:#fff;border:1px solid var(--border);border-radius:10px;
+  min-width:0;min-height:0;overflow-y:auto;overflow-x:hidden
+}
+.panel-heading {
+  position:sticky;top:0;z-index:500;background:#fff;
+  border-bottom:1px solid var(--border);padding:13px 14px;
+  font-size:15px;font-weight:800
+}
+.section { padding:12px 14px;border-bottom:1px solid #e8edf4 }
+h3 { font-size:13px;margin:0 0 10px;color:var(--navy) }
+label { display:block;font-size:12px;font-weight:700;margin:10px 0 5px }
+select,input,button {
+  width:100%;min-height:38px;border:1px solid #cbd5e1;
+  border-radius:6px;padding:8px;background:#fff;color:var(--text);
+  font-size:12px
+}
+button {
+  background:var(--blue);color:#fff;font-weight:700;border:0;cursor:pointer
+}
+button:hover { filter:brightness(.94) }
+button.secondary { background:#e7eef7;color:var(--navy);border:1px solid #cbd5e1 }
+button:disabled { opacity:.55;cursor:not-allowed }
+.btn-row { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px }
+.note { font-size:11px;color:var(--muted);line-height:1.55 }
+.status {
+  padding:10px;border-radius:7px;background:#edf4fc;border:1px solid #d4e4f7;
+  font-size:12px;line-height:1.5;overflow-wrap:anywhere
+}
+.status.error { background:#fff0f0;border-color:#f0c5c5;color:#8d2020 }
+.status.success { background:#eaf8f0;border-color:#bfe5ce;color:#14633e }
+
+#map { height:calc(100% - 165px);min-height:280px;width:100% }
+.map-tools { padding:9px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px }
+.legend { padding:8px 12px 12px;font-size:11px;line-height:1.7;border-top:1px solid var(--border) }
+.legend-item { display:flex;align-items:center;gap:8px;margin:4px 0 }
+.swatch { width:13px;height:13px;border:1px solid #6b7280;display:inline-block;flex-shrink:0 }
+.legend-line { display:inline-block;width:18px;height:4px;background:var(--blue);flex-shrink:0 }
+
+.kpi-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px }
+.kpi { border:1px solid var(--border);border-radius:8px;padding:10px;background:#f8fafc;min-width:0 }
+.kpi-label { font-size:11px;color:var(--muted) }
+.kpi-value { font-size:21px;font-weight:800;margin-top:5px;overflow-wrap:anywhere }
+.kpi-sub { font-size:10px;color:var(--muted);margin-top:4px }
+.chart-wrap { height:220px;position:relative;margin-top:8px }
+footer {
+  min-height:40px;background:#fff;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  padding:6px 12px;color:#536276;font-size:11px
+}
+input[type=checkbox] { width:auto;min-height:auto;margin-right:5px }
+.file-button {
+  display:block;text-align:center;padding:11px;background:#e7eef7;color:var(--navy);
+  border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700
+}
+.file-button:hover { background:#dce8f6 }
+#eaFile { display:none }
+
+/* Consistent, distinct education-facility marker shapes */
+.facility-icon-wrap {
+  background:transparent;
+  border:0;
+}
+.facility-symbol {
+  width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:10px;font-weight:800;line-height:1;
+  border:1.5px solid #fff;outline:1px solid #64748b;
+  box-shadow:0 1px 3px #0005;
+}
+.facility-symbol.primary { border-radius:50%; }
+.facility-symbol.secondary { border-radius:2px; }
+.facility-symbol.school {
+  clip-path:polygon(50% 0%,0% 100%,100% 100%);
+  border:0;outline:0;
+}
+.facility-symbol.tertiary {
+  width:15px;height:15px;margin:2px;
+  transform:rotate(45deg);border-radius:1px;
+}
+.facility-symbol.kindergarten {
+  clip-path:polygon(50% 0%,62% 35%,100% 35%,70% 58%,82% 100%,50% 75%,18% 100%,30% 58%,0% 35%,38% 35%);
+  border:0;outline:0;
+}
+.facility-symbol.childcare {
+  clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%);
+  border:0;outline:0;
+}
+.facility-symbol.other { border-radius:50%; }
+
+@media(max-width:950px) {
+  body { overflow:auto }
+  header { height:auto;min-height:76px }
+  main { height:auto;display:flex;flex-direction:column }
+  .panel { min-height:420px }
+  #map { height:480px }
+  footer { height:auto;min-height:40px }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <div>
+    <div class="brand">SILKYSINGZ GEOAI</div>
+    <div class="subtitle">Education Facility Accessibility &amp; EA Population Intelligence</div>
+  </div>
+  <div class="header-right"><strong>THE GAMBIA</strong><br>GIS / Cartography Unit</div>
+</header>
+
+<main>
+<!-- COLUMN 1: CONTROLS -->
+<section class="panel">
+  <div class="panel-heading">1. Controls &amp; Administrative Filters</div>
+
+  <div class="section">
+    <h3>EA geographic data</h3>
+    <label for="eaUrl">Hosted EA GeoJSON URL</label>
+    <input id="eaUrl" type="url" value="./Census_EAs_Geo.json" placeholder="Enter a direct GeoJSON URL">
+    <button id="loadEA" type="button" style="margin-top:8px">Load GeoJSON URL</button>
+
+    <label for="eaFile">Or select a local EA GeoJSON file</label>
+    <input id="eaFile" type="file" accept=".json,.geojson,application/json,application/geo+json">
+    <label for="eaFile" class="file-button"><span id="chooseFileText">Choose GeoJSON file</span></label>
+    <div id="eaFileName" class="note" style="margin-top:8px">No local file selected.</div>
+
+    <div id="eaLoadStatus" class="status" style="margin-top:10px">
+      Choose a file or load a hosted GeoJSON URL.
+    </div>
+    <div class="btn-row">
+      <button id="fitGambia" class="secondary" type="button">Fit all EAs</button>
+      <button id="clearEA" class="secondary" type="button">Clear data</button>
+    </div>
+    <p class="note">Supply a GeoJSON FeatureCollection containing EA polygons and administrative properties.</p>
+  </div>
+
+  <div class="section">
+    <h3>Administrative filters</h3>
+    <label for="lgaFilter">LGA / region</label>
+    <select id="lgaFilter"><option value="">Load EA data first</option></select>
+
+    <label for="districtFilter">District</label>
+    <select id="districtFilter" disabled><option value="">Select an LGA first</option></select>
+
+    <label for="wardFilter">Ward</label>
+    <select id="wardFilter" disabled><option value="">Select a district first</option></select>
+
+    <label for="populationField">EA population field</label>
+    <select id="populationField">
+      <option value="auto">Auto-detect population field</option>
+      <option value="map_pop">map_pop</option>
+      <option value="ls_pop">ls_pop</option>
+      <option value="enum_pop">enum_pop</option>
+      <option value="population">population</option>
+      <option value="POP">POP</option>
+      <option value="pop">pop</option>
+      <option value="sum_pop">sum_pop</option>
+      <option value="sum_hhs">sum_hhs (households, not population)</option>
+    </select>
+    <div id="adminStatus" class="status" style="margin-top:10px">Load EA data, then choose an administrative area.</div>
+    <div class="btn-row">
+      <button id="applyFilters" type="button">Apply filters</button>
+      <button id="reset" type="button" class="secondary">Reset filters</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Education facilities</h3>
+    <label for="facilityType">Education facility category</label>
+    <select id="facilityType">
+      <option value="all">All education facilities</option>
+      <option value="school">Schools (unspecified level)</option>
+      <option value="primary">Primary schools</option>
+      <option value="secondary">Secondary schools</option>
+      <option value="tertiary">Colleges and universities</option>
+      <option value="kindergarten">Kindergartens / early childhood</option>
+      <option value="childcare">Childcare facilities</option>
+      <option value="other">Other education facilities</option>
+    </select>
+
+    <label for="facilitySearch">Search facility name</label>
+    <input id="facilitySearch" type="search" placeholder="Search education facilities">
+    <button id="loadFacilities" type="button" style="margin-top:10px">Load / refresh education facilities</button>
+    <p class="note">Facilities are queried from OpenStreetMap through Overpass. Coverage and classification depend on mapped tags and network availability.</p>
+  </div>
+
+  <div class="section">
+    <h3>Map layers and basemap</h3>
+    <label for="basemap">Basemap</label>
+    <select id="basemap">
+      <option value="street">Street map</option>
+      <option value="satellite">Satellite imagery</option>
+      <option value="hybrid">Hybrid imagery</option>
+      <option value="terrain">Terrain</option>
+      <option value="dark">Dark map</option>
+    </select>
+    <label><input id="showEAs" type="checkbox" checked> Show EA boundaries</label>
+    <label><input id="showPopulation" type="checkbox"> Shade EAs by population</label>
+    <label><input id="showFacilities" type="checkbox" checked> Show education facilities</label>
+  </div>
+
+  <div class="section">
+    <h3>Route analysis</h3>
+    <label for="routeStart">Starting facility</label>
+    <select id="routeStart"><option value="">Select a facility</option></select>
+    <label for="routeEnd">Destination facility</label>
+    <select id="routeEnd"><option value="">Select a destination</option></select>
+    <div class="btn-row">
+      <button id="makeRoute" type="button">Calculate route</button>
+      <button id="clearRoute" type="button" class="secondary">Clear route</button>
+    </div>
+    <label for="radius">Proximity radius (km)</label>
+    <input id="radius" type="number" min="0.1" max="100" step="0.1" value="5">
+    <button id="analyseRadius" type="button" style="margin-top:10px">Analyse proximity</button>
+  </div>
+
+  <div class="section">
+    <h3>Export results</h3>
+    <div class="btn-row">
+      <button id="exportFacilities" type="button">Facilities CSV</button>
+      <button id="exportEAs" type="button" class="secondary">Selected EAs CSV</button>
+    </div>
+    <button id="exportSummary" type="button" class="secondary" style="margin-top:8px">Summary CSV</button>
+  </div>
+</section>
+
+<!-- COLUMN 2: MAP -->
+<section class="panel">
+  <div class="panel-heading">2. Interactive Map</div>
+  <div class="map-tools">
+    <div id="mapStatus" class="status">Load EA boundaries to begin.</div>
+    <button id="zoomSelected" class="secondary" type="button">Zoom to selection</button>
+  </div>
+  <div id="map"></div>
+  <div class="legend">
+    <strong>Persistent map legend</strong>
+    <div class="legend-item"><span class="swatch" style="background:#d8e8f8"></span> EA boundary</div>
+    <div class="legend-item"><span class="swatch" style="background:#77b5ed"></span> Selected administrative area</div>
+
+    <div class="legend-item"><span class="swatch" style="background:#ffffcc"></span> Population: 0–99</div>
+    <div class="legend-item"><span class="swatch" style="background:#ffeda0"></span> Population: 100–299</div>
+    <div class="legend-item"><span class="swatch" style="background:#feb24c"></span> Population: 300–599</div>
+    <div class="legend-item"><span class="swatch" style="background:#f03b20"></span> Population: 600–999</div>
+    <div class="legend-item"><span class="swatch" style="background:#bd0026"></span> Population: 1,000+</div>
+
+    <hr style="border:0;border-top:1px solid #e2e8f0;margin:8px 0">
+    <strong>Education facility categories</strong>
+
+    <div class="legend-item">
+      <span class="facility-symbol primary" style="background:#c83b42">P</span>
+      Primary school
+    </div>
+    <div class="legend-item">
+      <span class="facility-symbol secondary" style="background:#7c3aed">S</span>
+      Secondary school
+    </div>
+    <div class="legend-item">
+      <span class="facility-symbol school" style="background:#e87924">K</span>
+      Unspecified-level school
+    </div>
+    <div class="legend-item">
+      <span class="facility-symbol tertiary" style="background:#1769aa"></span>
+      College / university
+    </div>
+    <div class="legend-item">
+      <span class="facility-symbol kindergarten" style="background:#16845b"></span>
+      Kindergarten / preschool
+    </div>
+    <div class="legend-item">
+      <span class="facility-symbol childcare" style="background:#0891b2"></span>
+      Childcare facility
+    </div>
+    <div class="legend-item">
+      <span class="facility-symbol other" style="background:#64748b">O</span>
+      Other education facility
+    </div>
+    <div class="legend-item"><span class="legend-line"></span> Calculated road route</div>
+    <p class="note">Marker colours and shapes identify mapped categories. Classification depends on OpenStreetMap tags and may not reflect a facility's official status.</p>
+  </div>
+</section>
+
+<!-- COLUMN 3: ANALYTICS -->
+<section class="panel">
+  <div class="panel-heading">3. Analytics &amp; Interpretation</div>
+
+  <div class="section">
+    <h3>Selected area indicators</h3>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Selected EAs</div><div id="kpiEAs" class="kpi-value">0</div><div class="kpi-sub">EA polygons</div></div>
+      <div class="kpi"><div class="kpi-label">EA population</div><div id="kpiPopulation" class="kpi-value">—</div><div class="kpi-sub">Selected population field</div></div>
+      <div class="kpi"><div class="kpi-label">Education facilities</div><div id="kpiFacilities" class="kpi-value">0</div><div class="kpi-sub">Current selection and filters</div></div>
+      <div class="kpi"><div class="kpi-label">Facilities per 10,000 people</div><div id="kpiRate" class="kpi-value">—</div><div class="kpi-sub">Descriptive indicator</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Education facilities by category</h3>
+    <div class="chart-wrap"><canvas id="facilityChart"></canvas></div>
+  </div>
+
+  <div class="section">
+    <h3>EA population distribution</h3>
+    <div class="chart-wrap"><canvas id="populationChart"></canvas></div>
+  </div>
+
+  <div class="section">
+    <h3>Analysis description</h3>
+    <div id="analysisText" class="status">Load EA data and select an administrative area.</div>
+    <p id="radiusText" class="note" style="margin-top:10px">Proximity analysis has not been run.</p>
+  </div>
+
+  <div class="section">
+    <h3>Methodology and limitations</h3>
+    <p class="note">
+      <strong>Administrative filtering:</strong> LGA, district and ward values are read from the EA GeoJSON properties. District and ward options cascade from the selected administrative area.
+      <br><br>
+      <strong>Education facilities:</strong> queried from OpenStreetMap through Overpass using education-related amenity and school-level tags. Tag quality and completeness vary.
+      <br><br>
+      <strong>Population:</strong> EA population is summed from the selected property. Missing or invalid values are excluded. Household totals must not be interpreted as population.
+      <br><br>
+      <strong>Proximity:</strong> each EA's bounding-box centre is used as a proxy, with straight-line distance to the nearest mapped facility. This is not a road-network or population-weighted accessibility estimate.
+      <br><br>
+      <strong>Interpretation:</strong> counts and rates are exploratory screening indicators, not official school coverage, enrolment, capacity, quality or education-access measures.
+      <br><br>
+      <strong>Limitations:</strong> OpenStreetMap may have missing, duplicated, outdated or incorrectly classified facilities. A school's presence does not establish that it is open or accepting learners.
+    </p>
+  </div>
+
+  <div class="section">
+    <h3>Data sources and credits</h3>
+    <p class="note">
+      EA boundaries: supplied Census EA GeoJSON.<br><br>
+      Education facilities: OpenStreetMap contributors via Overpass API.<br><br>
+      Basemaps: OpenStreetMap, Esri, CARTO and OpenTopoMap.<br><br>
+      Mapping: Leaflet. Charts: Chart.js. Routing: Leaflet Routing Machine and its configured routing service.<br><br>
+      <strong>Produced by Ansu Singhateh</strong><br>
+      GIS Analyst | GIS / Cartography Unit | Gambia Bureau of Statistics (GBoS)<br><br>
+      SILKYSINGZ GEOAI • Research and educational use
+    </p>
+  </div>
+</section>
+</main>
+
+<footer>
+  SILKYSINGZ GEOAI • Education Facility Accessibility &amp; EA Population Intelligence • Produced by Ansu Singhateh
+</footer>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+
+const ADMIN_KEYS = {
+  lga:["lganame","LGA","lga","region","Region","REGION","lga_name"],
+  district:["distname","district","District","DISTRICT","districtname","district_name"],
+  ward:["wardname","ward","Ward","WARD","ward_name"]
+};
+
+const POP_FIELDS = ["map_pop","ls_pop","enum_pop","population","POP","pop","sum_pop"];
+
+let eaFeatures = [];
+let allFacilities = [];
+let facilitiesLoaded = false;
+let activeAdminLevel = "";
+let activeAdminValue = "";
+let facilityChart = null;
+let populationChart = null;
+let routeControl = null;
+
+function status(id,message,type="") {
+  const el=$(id);
+  el.textContent=message;
+  el.className="status"+(type?" "+type:"");
+}
+function norm(value) { return String(value ?? "").trim(); }
+
+function getProp(properties,keys) {
+  if(!properties) return "";
+  for(const key of keys) {
+    if(properties[key]!==undefined && properties[key]!==null && norm(properties[key])!=="") {
+      return properties[key];
+    }
+  }
+  return "";
+}
+function admin(feature,level) {
+  return norm(getProp(feature.properties||{},ADMIN_KEYS[level]));
+}
+function populationField() {
+  const requested=$("populationField").value;
+  if(requested!=="auto") return requested;
+  for(const key of POP_FIELDS) {
+    if(eaFeatures.some(f=>f.properties && f.properties[key]!==undefined &&
+      f.properties[key]!==null && norm(f.properties[key])!=="")) return key;
+  }
+  return "";
+}
+function population(feature) {
+  const field=populationField();
+  if(!field) return null;
+  const value=feature.properties?.[field];
+  if(value===null || value===undefined || norm(value)==="") return null;
+  const number=Number(value);
+  return Number.isFinite(number) && number>=0 ? number : null;
+}
+function uniqueValues(features,level) {
+  return [...new Set(features.map(f=>admin(f,level)).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b));
+}
+function fillSelect(id,values,placeholder) {
+  const select=$(id);
+  select.innerHTML="";
+  const first=document.createElement("option");
+  first.value="";
+  first.textContent=placeholder;
+  select.appendChild(first);
+  values.forEach(value=>{
+    const option=document.createElement("option");
+    option.value=value;
+    option.textContent=value;
+    select.appendChild(option);
+  });
+}
+function populateLGAs() {
+  fillSelect("lgaFilter",uniqueValues(eaFeatures,"lga"),"Select an LGA");
+  fillSelect("districtFilter",[],"Select an LGA first");
+  fillSelect("wardFilter",[],"Select a district first");
+  $("districtFilter").disabled=true;
+  $("wardFilter").disabled=true;
+}
+function selectedEAs() {
+  if(!eaFeatures.length || !activeAdminLevel || !activeAdminValue) return [];
+  const lga=$("lgaFilter").value;
+  const district=$("districtFilter").value;
+  const ward=$("wardFilter").value;
+  return eaFeatures.filter(feature=>{
+    if(activeAdminLevel==="lga") return admin(feature,"lga")===lga;
+    if(activeAdminLevel==="district") return admin(feature,"lga")===lga && admin(feature,"district")===district;
+    if(activeAdminLevel==="ward") return admin(feature,"lga")===lga &&
+      admin(feature,"district")===district && admin(feature,"ward")===ward;
+    return false;
+  });
+}
+function validSelection() {
+  return eaFeatures.length>0 && Boolean(activeAdminLevel) &&
+    Boolean(activeAdminValue) && selectedEAs().length>0;
+}
+
+/* Map and basemaps */
+const map=L.map("map").setView([13.45,-15.5],8);
+const eaLayer=L.layerGroup().addTo(map);
+const selectionLayer=L.layerGroup().addTo(map);
+const facilityLayer=L.layerGroup().addTo(map);
+
+const satelliteLayer=()=>L.tileLayer(
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  {maxZoom:19,attribution:"Tiles © Esri"}
+);
+const basemaps={
+  street:L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {maxZoom:19,attribution:"© OpenStreetMap contributors"}),
+  satellite:satelliteLayer(),
+  hybrid:L.layerGroup([
+    satelliteLayer(),
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
+      {maxZoom:19,attribution:"© CARTO"})
+  ]),
+  terrain:L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+    {maxZoom:17,attribution:"© OpenTopoMap"}),
+  dark:L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    {maxZoom:19,attribution:"© CARTO"})
+};
+let currentBasemap=null;
+function setBasemap(name) {
+  if(currentBasemap) map.removeLayer(currentBasemap);
+  currentBasemap=basemaps[name]||basemaps.street;
+  currentBasemap.addTo(map);
+}
+setBasemap("street");
+
+function fitAllEAs() {
+  if(!eaFeatures.length) { map.setView([13.45,-15.5],8); return; }
+  const layer=L.geoJSON({type:"FeatureCollection",features:eaFeatures});
+  if(layer.getBounds().isValid()) map.fitBounds(layer.getBounds().pad(0.04));
+}
+function zoomSelected() {
+  const features=selectedEAs();
+  if(!features.length) {
+    status("mapStatus","Select an LGA, district, or ward before zooming.");
+    return;
+  }
+  const layer=L.geoJSON({type:"FeatureCollection",features});
+  if(layer.getBounds().isValid()) map.fitBounds(layer.getBounds().pad(0.08));
+}
+function escapeHTML(value) {
+  return String(value??"").replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+/* Point-in-polygon screening */
+function pointInRing(point,ring) {
+  let inside=false;
+  const x=point[0],y=point[1];
+  for(let i=0,j=ring.length-1;i<ring.length;j=i++) {
+    const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];
+    const crosses=((yi>y)!==(yj>y)) &&
+      (x<(xj-xi)*(y-yi)/((yj-yi)||1e-15)+xi);
+    if(crosses) inside=!inside;
+  }
+  return inside;
+}
+function pointInPolygon(point,polygon) {
+  if(!polygon?.length || !pointInRing(point,polygon[0])) return false;
+  for(let i=1;i<polygon.length;i++) if(pointInRing(point,polygon[i])) return false;
+  return true;
+}
+function insideGeometry(lon,lat,geometry) {
+  if(!geometry?.coordinates) return false;
+  const point=[lon,lat];
+  if(geometry.type==="Polygon") return pointInPolygon(point,geometry.coordinates);
+  if(geometry.type==="MultiPolygon") {
+    return geometry.coordinates.some(polygon=>pointInPolygon(point,polygon));
+  }
+  return false;
+}
+function insideFeatures(facility,features) {
+  return features.some(feature=>insideGeometry(facility.lon,facility.lat,feature.geometry));
+}
+function insideNationalCoverage(facility) {
+  return eaFeatures.length>0 && insideFeatures(facility,eaFeatures);
+}
+function insideSelectedArea(facility) {
+  return validSelection() && insideNationalCoverage(facility) &&
+    insideFeatures(facility,selectedEAs());
+}
+
+/* EA drawing */
+function drawEAs() {
+  eaLayer.clearLayers();
+  selectionLayer.clearLayers();
+  if(!$("showEAs").checked || !eaFeatures.length) return;
+  const usePopulation=$("showPopulation").checked;
+
+  eaFeatures.forEach(feature=>{
+    const value=population(feature);
+    let fill="#d8e8f8";
+    if(usePopulation && value!==null) {
+      if(value<100) fill="#ffffcc";
+      else if(value<300) fill="#ffeda0";
+      else if(value<600) fill="#feb24c";
+      else if(value<1000) fill="#f03b20";
+      else fill="#bd0026";
+    }
+    L.geoJSON(feature,{
+      style:{color:"#75869b",weight:0.5,fillColor:fill,fillOpacity:0.42},
+      onEachFeature:(f,item)=>{
+        item.bindPopup(
+          "<strong>Enumeration Area</strong><br>"+
+          "LGA: "+escapeHTML(admin(f,"lga"))+"<br>"+
+          "District: "+escapeHTML(admin(f,"district"))+"<br>"+
+          "Ward: "+escapeHTML(admin(f,"ward"))+"<br>"+
+          "Population field: "+escapeHTML(populationField()||"Unavailable")+"<br>"+
+          "Population: "+(population(f)??"Unavailable")
+        );
+      }
+    }).addTo(eaLayer);
+  });
+
+  const chosen=selectedEAs();
+  if(chosen.length) L.geoJSON({type:"FeatureCollection",features:chosen},{
+    style:{color:"#123c69",weight:2.5,fillColor:"#77b5ed",fillOpacity:0.13}
+  }).addTo(selectionLayer);
+}
+
+/* Education facility categories */
+function categoryFromTags(tags) {
+  const amenity=String(tags.amenity||"").toLowerCase();
+  const education=String(tags.education||"").toLowerCase();
+  const isSchool=amenity==="school" || tags.building==="school" ||
+    education==="school" || education==="primary" || education==="secondary";
+
+  if(amenity==="university" || amenity==="college" ||
+     education==="university" || education==="college") return "tertiary";
+
+  if(amenity==="kindergarten" || amenity==="preschool" ||
+     education==="kindergarten" || education==="preschool") return "kindergarten";
+
+  if(amenity==="childcare" || amenity==="nursery" ||
+     education==="childcare") return "childcare";
+
+  if(isSchool) {
+    const level=String(tags["school:level"]||tags.isced||tags.education_level||"").toLowerCase();
+    if(level.includes("primary") || level==="1" || level==="2") return "primary";
+    if(level.includes("secondary") || level==="3" || level==="4") return "secondary";
+    return "school";
+  }
+
+  if(amenity==="music_school" || amenity==="language_school" ||
+     amenity==="driving_school" || amenity==="training" ||
+     education || tags["school:level"]) return "other";
+
+  return "";
+}
+
+function parseFacility(element) {
+  let lat=element.lat,lon=element.lon;
+  if((!Number.isFinite(lat)||!Number.isFinite(lon)) && element.center) {
+    lat=element.center.lat;
+    lon=element.center.lon;
+  }
+  if(!Number.isFinite(lat)||!Number.isFinite(lon)) return null;
+  const tags=element.tags||{};
+  const category=categoryFromTags(tags);
+  if(!category) return null;
+  return {
+    id:String(element.type+"/"+element.id),lat,lon,category,
+    name:tags.name||tags["name:en"]||category+" ("+element.id+")",
+    tagsString:Object.entries(tags).map(([k,v])=>k+" "+v).join(" ")
+  };
+}
+
+const FACILITY_STYLES = {
+  primary:      {colour:"#c83b42",shape:"primary",letter:"P"},
+  secondary:    {colour:"#7c3aed",shape:"secondary",letter:"S"},
+  school:       {colour:"#e87924",shape:"school",letter:"K"},
+  tertiary:     {colour:"#1769aa",shape:"tertiary",letter:"C"},
+  kindergarten: {colour:"#16845b",shape:"kindergarten",letter:"E"},
+  childcare:    {colour:"#0891b2",shape:"childcare",letter:"D"},
+  other:        {colour:"#64748b",shape:"other",letter:"O"}
+};
+
+function facilityColour(category) {
+  return (FACILITY_STYLES[category]||FACILITY_STYLES.other).colour;
+}
+
+function facilityIcon(category) {
+  const spec=FACILITY_STYLES[category]||FACILITY_STYLES.other;
+  const html='<span class="facility-symbol '+spec.shape+'" style="background:'+spec.colour+'">'+
+    (["primary","secondary","school","other"].includes(category)?spec.letter:"")+
+    '</span>';
+
+  return L.divIcon({
+    className:"facility-icon-wrap",
+    html,
+    iconSize:[22,22],
+    iconAnchor:[11,11],
+    popupAnchor:[0,-10]
+  });
+}
+
+function visibleFacilities() {
+  if(!validSelection()||!facilitiesLoaded) return [];
+  const category=$("facilityType").value;
+  const search=$("facilitySearch").value.trim().toLowerCase();
+  return allFacilities.filter(facility=>{
+    if(!insideSelectedArea(facility)) return false;
+    if(category!=="all" && facility.category!==category) return false;
+    const searchable=(facility.name+" "+facility.category+" "+facility.tagsString).toLowerCase();
+    return !search||searchable.includes(search);
+  });
+}
+function updateFacilityDropdowns(features) {
+  ["routeStart","routeEnd"].forEach(id=>{
+    const oldValue=$(id).value;
+    $(id).innerHTML="";
+    const first=document.createElement("option");
+    first.value="";
+    first.textContent=id==="routeStart"?"Select a facility":"Select a destination";
+    $(id).appendChild(first);
+    features.forEach(facility=>{
+      const option=document.createElement("option");
+      option.value=facility.id;
+      option.textContent=facility.name+" ("+facility.category+")";
+      $(id).appendChild(option);
+    });
+    if(features.some(f=>f.id===oldValue)) $(id).value=oldValue;
+  });
+}
+function drawFacilities() {
+  facilityLayer.clearLayers();
+  if(!validSelection()||!facilitiesLoaded||!$("showFacilities").checked) {
+    updateFacilityDropdowns([]);
+    return;
+  }
+
+  const facilities=visibleFacilities();
+  facilities.forEach(facility=>{
+    L.marker([facility.lat,facility.lon],{
+      icon:facilityIcon(facility.category),
+      title:facility.name,
+      keyboard:true
+    }).bindPopup(
+      "<strong>"+escapeHTML(facility.name)+"</strong><br>"+
+      "Category: "+escapeHTML(facility.category)+"<br>"+
+      "Selected area: "+escapeHTML(activeAdminValue)+"<br>"+
+      "Source: OpenStreetMap"
+    ).addTo(facilityLayer);
+  });
+  updateFacilityDropdowns(facilities);
+}
+
+/* Charts and KPIs */
+function drawCharts() {
+  const facilities=visibleFacilities();
+  const categories=["primary","secondary","school","tertiary","kindergarten","childcare","other"];
+  const labels=["Primary","Secondary","Unspecified schools","Colleges / universities","Kindergartens","Childcare","Other"];
+  const counts=categories.map(c=>facilities.filter(f=>f.category===c).length);
+
+  if(facilityChart) facilityChart.destroy();
+  facilityChart=new Chart($("facilityChart"),{
+    type:"bar",
+    data:{labels,datasets:[{label:"Facilities",data:counts,backgroundColor:categories.map(facilityColour)}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,ticks:{precision:0}}}
+    }
+  });
+
+  const values=selectedEAs().map(population).filter(v=>v!==null);
+  const bins=[
+    {label:"0–99",min:0,max:100},
+    {label:"100–299",min:100,max:300},
+    {label:"300–599",min:300,max:600},
+    {label:"600–999",min:600,max:1000},
+    {label:"1,000+",min:1000,max:Infinity}
+  ];
+  const binCounts=bins.map(bin=>values.filter(v=>v>=bin.min&&v<bin.max).length);
+
+  if(populationChart) populationChart.destroy();
+  populationChart=new Chart($("populationChart"),{
+    type:"bar",
+    data:{labels:bins.map(b=>b.label),datasets:[{
+      label:"Number of EAs",data:binCounts,backgroundColor:"#1769aa"
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,ticks:{precision:0}}}
+    }
+  });
+}
+function updateAnalytics() {
+  const eas=selectedEAs();
+  const facilities=visibleFacilities();
+  const values=eas.map(population).filter(v=>v!==null);
+  const totalPopulation=values.reduce((sum,v)=>sum+v,0);
+
+  $("kpiEAs").textContent=eas.length.toLocaleString();
+  $("kpiPopulation").textContent=values.length?Math.round(totalPopulation).toLocaleString():"—";
+  $("kpiFacilities").textContent=facilities.length.toLocaleString();
+  $("kpiRate").textContent=totalPopulation>0?
+    (facilities.length/totalPopulation*10000).toFixed(2):"—";
+
+  const counts={primary:0,secondary:0,school:0,tertiary:0,kindergarten:0,childcare:0,other:0};
+  facilities.forEach(f=>counts[f.category]=(counts[f.category]||0)+1);
+
+  if(!validSelection()) {
+    $("analysisText").textContent="Select an LGA, district, or ward to display education facilities and statistics.";
+    return;
+  }
+  $("analysisText").textContent=
+    activeAdminLevel.toUpperCase()+": "+activeAdminValue+". "+
+    eas.length+" EA polygons selected. "+
+    facilities.length+" mapped education facilities inside selected EA polygons. "+
+    "Primary: "+counts.primary+"; secondary: "+counts.secondary+
+    "; unspecified schools: "+counts.school+"; tertiary: "+counts.tertiary+
+    "; kindergartens: "+counts.kindergarten+"; childcare: "+counts.childcare+
+    "; other: "+counts.other+". "+
+    (values.length?"Summed EA population ("+populationField()+"): "+
+      Math.round(totalPopulation).toLocaleString()+".":"Population values are unavailable.")+
+    " Counts are based on mapped OpenStreetMap records.";
+}
+function refresh() {
+  drawEAs();
+  drawFacilities();
+  updateAnalytics();
+  drawCharts();
+
+  if(!eaFeatures.length) status("mapStatus","EA boundaries are not loaded.","error");
+  else if(!validSelection()) status("mapStatus","Select an LGA, district, or ward. Facilities remain hidden.");
+  else status("mapStatus",activeAdminLevel.toUpperCase()+": "+activeAdminValue+
+    " · "+selectedEAs().length+" EAs · "+visibleFacilities().length+" facilities.","success");
+}
+
+/* Cascading administrative filters */
+function applyAdminFilters() {
+  if(!eaFeatures.length) {
+    activeAdminLevel="";activeAdminValue="";
+    status("adminStatus","Load EA GeoJSON before selecting an area.","error");
+    refresh();return;
+  }
+  const lga=$("lgaFilter").value;
+  const district=$("districtFilter").value;
+  const ward=$("wardFilter").value;
+
+  if(ward) { activeAdminLevel="ward";activeAdminValue=ward; }
+  else if(district) { activeAdminLevel="district";activeAdminValue=district; }
+  else if(lga) { activeAdminLevel="lga";activeAdminValue=lga; }
+  else { activeAdminLevel="";activeAdminValue=""; }
+
+  if(!validSelection()) status("adminStatus","Select a valid LGA, district, or ward.","error");
+  else status("adminStatus","Active selection: "+activeAdminLevel.toUpperCase()+
+    " — "+activeAdminValue+". "+selectedEAs().length+" EA polygons selected.","success");
+
+  refresh();
+  if(validSelection()) zoomSelected();
+}
+function onLgaChange() {
+  const lga=$("lgaFilter").value;
+  const matches=eaFeatures.filter(f=>admin(f,"lga")===lga);
+  fillSelect("districtFilter",lga?uniqueValues(matches,"district"):[],
+    lga?"All districts — select a district":"Select an LGA first");
+  fillSelect("wardFilter",[],"Select a district first");
+  $("districtFilter").disabled=!lga;
+  $("wardFilter").disabled=true;
+  applyAdminFilters();
+}
+function onDistrictChange() {
+  const lga=$("lgaFilter").value,district=$("districtFilter").value;
+  const matches=eaFeatures.filter(f=>admin(f,"lga")===lga&&admin(f,"district")===district);
+  fillSelect("wardFilter",district?uniqueValues(matches,"ward"):[],
+    district?"All wards — select a ward":"Select a district first");
+  $("wardFilter").disabled=!district;
+  applyAdminFilters();
+}
+
+/* GeoJSON loading and validation */
+async function loadEAObject(data,sourceName="GeoJSON") {
+  let inputFeatures=[];
+  if(data?.type==="FeatureCollection"&&Array.isArray(data.features)) inputFeatures=data.features;
+  else if(data?.type==="Feature") inputFeatures=[data];
+  else throw new Error("The file is not a GeoJSON FeatureCollection or Feature.");
+
+  const features=inputFeatures.filter(f=>f&&f.geometry&&
+    ["Polygon","MultiPolygon"].includes(f.geometry.type)&&f.properties);
+  if(!features.length) throw new Error("No valid polygon EA features were found.");
+
+  const example=features[0].properties;
+  const foundLGA=ADMIN_KEYS.lga.find(k=>example[k]!==undefined&&norm(example[k])!=="");
+  if(!foundLGA) throw new Error("LGA property not found. Available fields: "+Object.keys(example).join(", "));
+
+  const foundDistrict=ADMIN_KEYS.district.find(k=>example[k]!==undefined&&norm(example[k])!=="");
+  const foundWard=ADMIN_KEYS.ward.find(k=>example[k]!==undefined&&norm(example[k])!=="");
+
+  eaFeatures=features;
+  allFacilities=[];
+  facilitiesLoaded=false;
+  activeAdminLevel="";
+  activeAdminValue="";
+  clearRoute();
+  populateLGAs();
+  refresh();
+  fitAllEAs();
+
+  const lgaCount=uniqueValues(eaFeatures,"lga").length;
+  const districtCount=uniqueValues(eaFeatures,"district").length;
+  const wardCount=uniqueValues(eaFeatures,"ward").length;
+  $("eaFileName").textContent=sourceName+" · "+eaFeatures.length.toLocaleString()+" EA polygons";
+
+  status("eaLoadStatus","Loaded successfully: "+eaFeatures.length.toLocaleString()+
+    " EA polygons. Found "+lgaCount+" LGAs, "+districtCount+" districts and "+
+    wardCount+" wards. LGA="+foundLGA+", district="+(foundDistrict||"not detected")+
+    ", ward="+(foundWard||"not detected")+".","success");
+  status("adminStatus","EA data loaded. Select an LGA to populate district and ward options.","success");
+  status("mapStatus","EA boundaries loaded. Select an administrative area before loading facilities.","success");
+
+  console.info("SILKYSINGZ GEOAI: EA polygons loaded:",eaFeatures.length);
+  console.info("SILKYSINGZ GEOAI: Example EA properties:",example);
+}
+async function loadEAURL() {
+  const url=$("eaUrl").value.trim();
+  if(!url) throw new Error("Enter a hosted GeoJSON URL.");
+  $("loadEA").disabled=true;
+  status("eaLoadStatus","Loading GeoJSON URL...");
+  try {
+    const response=await fetch(url);
+    if(!response.ok) throw new Error("HTTP "+response.status+". Check the direct GeoJSON URL.");
+    await loadEAObject(await response.json(),"URL");
+  } finally {
+    $("loadEA").disabled=false;
+  }
+}
+async function loadEAFile(file) {
+  if(!file) return;
+  status("eaLoadStatus","Reading local file: "+file.name);
+  $("chooseFileText").textContent="Reading selected file...";
+  try {
+    const data=JSON.parse(await file.text());
+    await loadEAObject(data,file.name);
+    $("eaFileName").textContent="Selected file: "+file.name+" ("+(file.size/1024/1024).toFixed(2)+" MB)";
+    $("chooseFileText").textContent="Choose another GeoJSON file";
+  } catch(error) {
+    status("eaLoadStatus","File loading failed: "+error.message,"error");
+    $("chooseFileText").textContent="Choose GeoJSON file";
+  }
+}
+
+/* Load education facilities from Overpass */
+async function loadFacilities() {
+  if(!eaFeatures.length) {
+    status("mapStatus","Load EA boundaries before requesting facilities.","error");
+    return;
+  }
+  if(!validSelection()) {
+    status("adminStatus","Select an LGA, district, or ward before loading facilities.","error");
+    status("mapStatus","Facility loading requires an administrative selection.","error");
+    return;
+  }
+
+  $("loadFacilities").disabled=true;
+  status("mapStatus","Querying OpenStreetMap education data. Please wait...");
+
+  const query=
+    '[out:json][timeout:60];' +
+    'area["ISO3166-1"="GM"][admin_level=2]->.gambia;' +
+    '('+
+      'nwr["amenity"~"^(school|kindergarten|college|university|childcare|nursery|preschool|music_school|language_school|driving_school|training)$"](area.gambia);'+
+      'nwr["education"](area.gambia);'+
+      'nwr["school:level"](area.gambia);'+
+    ');out center tags;';
+
+  const endpoints=[
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter"
+  ];
+  let data=null,lastError=null;
+
+  try {
+    for(const endpoint of endpoints) {
+      try {
+        const response=await fetch(endpoint,{
+          method:"POST",
+          headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},
+          body:"data="+encodeURIComponent(query)
+        });
+        if(!response.ok) throw new Error("Overpass HTTP "+response.status);
+        data=await response.json();
+        break;
+      } catch(error) { lastError=error; }
+    }
+    if(!data) throw new Error("Education data service unavailable. "+
+      (lastError?.message||"Please try again later."));
+
+    const unique=new Map();
+    for(const element of data.elements||[]) {
+      const facility=parseFacility(element);
+      if(!facility||!insideNationalCoverage(facility)) continue;
+      unique.set(facility.id,facility);
+    }
+    allFacilities=[...unique.values()];
+    facilitiesLoaded=true;
+    refresh();
+    status("mapStatus",visibleFacilities().length+
+      " mapped education facilities fall within the selected area. "+
+      "Records outside loaded EA coverage were excluded.","success");
+  } catch(error) {
+    status("mapStatus",error.message,"error");
+  } finally {
+    $("loadFacilities").disabled=false;
+  }
+}
+
+/* Routing */
+function clearRoute() {
+  if(routeControl) { map.removeControl(routeControl);routeControl=null; }
+}
+function calculateRoute() {
+  const facilities=visibleFacilities();
+  const start=facilities.find(f=>f.id===$("routeStart").value);
+  const end=facilities.find(f=>f.id===$("routeEnd").value);
+  if(!start||!end) {
+    status("mapStatus","Choose two facilities from the current selection.","error");return;
+  }
+  if(start.id===end.id) {
+    status("mapStatus","Choose two different facilities.","error");return;
+  }
+  if(!L.Routing||!L.Routing.control) {
+    status("mapStatus","Routing library is unavailable.","error");return;
+  }
+  clearRoute();
+  routeControl=L.Routing.control({
+    waypoints:[L.latLng(start.lat,start.lon),L.latLng(end.lat,end.lon)],
+    addWaypoints:false,draggableWaypoints:false,routeWhileDragging:false,
+    showAlternatives:false,createMarker:()=>null,
+    lineOptions:{styles:[{color:"#1769aa",opacity:0.9,weight:5}]}
+  }).addTo(map);
+  routeControl.on("routesfound",event=>{
+    const route=event.routes?.[0];
+    if(!route) return;
+    status("mapStatus","Route: "+start.name+" → "+end.name+
+      ". Distance: "+(route.summary.totalDistance/1000).toFixed(1)+
+      " km. Estimated routing time: "+Math.round(route.summary.totalTime/60)+
+      " minutes. This is a routing estimate, not a school commute survey.","success");
+  });
+  routeControl.on("routingerror",()=>{
+    status("mapStatus","Route calculation failed. The routing service may be unavailable.","error");
+  });
+}
+
+/* Proximity analysis */
+function haversine(a,b) {
+  const radians=d=>d*Math.PI/180;
+  const dLat=radians(b.lat-a.lat),dLon=radians(b.lon-a.lon);
+  const h=Math.sin(dLat/2)**2+
+    Math.cos(radians(a.lat))*Math.cos(radians(b.lat))*Math.sin(dLon/2)**2;
+  return 6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(Math.max(0,1-h)));
+}
+function analyseProximity() {
+  if(!validSelection()) {
+    $("radiusText").textContent="Select an administrative area first.";return;
+  }
+  const radius=Number($("radius").value);
+  if(!Number.isFinite(radius)||radius<=0) {
+    $("radiusText").textContent="Enter a positive radius in kilometres.";return;
+  }
+  const facilities=visibleFacilities(),eas=selectedEAs();
+  if(!facilities.length) {
+    $("radiusText").textContent="No mapped education facilities are available for this selection.";return;
+  }
+  let covered=0,distanceSum=0,validCentroids=0;
+  eas.forEach(feature=>{
+    const bounds=L.geoJSON(feature).getBounds();
+    if(!bounds.isValid()) return;
+    const centre=bounds.getCenter();
+    let nearest=Infinity;
+    facilities.forEach(f=>{
+      nearest=Math.min(nearest,haversine({lat:centre.lat,lon:centre.lng},{lat:f.lat,lon:f.lon}));
+    });
+    if(!Number.isFinite(nearest)) return;
+    validCentroids++;
+    distanceSum+=nearest;
+    if(nearest<=radius) covered++;
+  });
+  const percentage=validCentroids?covered/validCentroids*100:0;
+  $("radiusText").textContent=covered+" of "+validCentroids+
+    " EA bounding-box centres ("+percentage.toFixed(1)+"%) are within "+radius+
+    " km straight-line distance of a mapped education facility. Mean nearest-facility distance: "+
+    (validCentroids?(distanceSum/validCentroids).toFixed(2):"—")+
+    " km. This is a geographic screening proxy, not a measure of actual school access.";
+}
+
+/* CSV exports */
+function downloadCSV(filename,rows) {
+  if(!rows.length) {
+    status("mapStatus","There are no records available to export.","error");return;
+  }
+  const keys=[...new Set(rows.flatMap(row=>Object.keys(row)))];
+  const quote=value=>'"'+String(value??"").replace(/"/g,'""')+'"';
+  const csv=[keys.map(quote).join(","),...rows.map(row=>keys.map(k=>quote(row[k])).join(","))].join("\r\n");
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement("a");
+  link.href=url;link.download=filename;link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function exportFacilities() {
+  if(!validSelection()) { status("mapStatus","Select an administrative area first.","error");return; }
+  downloadCSV("SILKYSINGZ_Education_Facilities.csv",visibleFacilities().map(f=>({
+    name:f.name,category:f.category,latitude:f.lat,longitude:f.lon,
+    administrative_level:activeAdminLevel,administrative_area:activeAdminValue,
+    osm_id:f.id,source:"OpenStreetMap"
+  })));
+}
+function exportEAs() {
+  if(!validSelection()) { status("mapStatus","Select an administrative area first.","error");return; }
+  downloadCSV("SILKYSINGZ_Selected_EAs.csv",selectedEAs().map((f,i)=>({
+    EA_number:i+1,lga:admin(f,"lga"),district:admin(f,"district"),ward:admin(f,"ward"),
+    population:population(f),population_field:populationField()
+  })));
+}
+function exportSummary() {
+  if(!validSelection()) { status("mapStatus","Select an administrative area first.","error");return; }
+  const facilities=visibleFacilities(),eas=selectedEAs();
+  const values=eas.map(population).filter(v=>v!==null);
+  const total=values.reduce((sum,v)=>sum+v,0);
+  const count=category=>facilities.filter(f=>f.category===category).length;
+  downloadCSV("SILKYSINGZ_Education_Summary.csv",[{
+    administrative_level:activeAdminLevel,administrative_area:activeAdminValue,
+    selected_EAs:eas.length,population_field:populationField(),
+    summed_population:values.length?total:"",
+    education_facilities:facilities.length,
+    primary_schools:count("primary"),secondary_schools:count("secondary"),
+    unspecified_schools:count("school"),tertiary_facilities:count("tertiary"),
+    kindergartens:count("kindergarten"),childcare:count("childcare"),
+    other_education_facilities:count("other"),
+    note:"Geospatial screening result; not an official education coverage measure."
+  }]);
+}
+
+/* Clear and reset */
+function clearEAData() {
+  clearRoute();
+  eaFeatures=[];allFacilities=[];facilitiesLoaded=false;
+  activeAdminLevel="";activeAdminValue="";
+  eaLayer.clearLayers();selectionLayer.clearLayers();facilityLayer.clearLayers();
+  populateLGAs();
+  fillSelect("lgaFilter",[],"Load EA data first");
+  fillSelect("districtFilter",[],"Select an LGA first");
+  fillSelect("wardFilter",[],"Select a district first");
+  $("districtFilter").disabled=true;$("wardFilter").disabled=true;
+  $("eaFile").value="";
+  $("eaFileName").textContent="No local file selected.";
+  $("chooseFileText").textContent="Choose GeoJSON file";
+  updateFacilityDropdowns([]);
+  refresh();
+  status("eaLoadStatus","EA data cleared. Choose a new file or URL.");
+  status("adminStatus","Load EA data before selecting an administrative area.");
+  status("mapStatus","EA data cleared.");
+}
+function resetFilters() {
+  $("lgaFilter").value="";
+  fillSelect("districtFilter",[],"Select an LGA first");
+  fillSelect("wardFilter",[],"Select a district first");
+  $("districtFilter").disabled=true;$("wardFilter").disabled=true;
+  $("facilityType").value="all";
+  $("facilitySearch").value="";
+  $("populationField").value="auto";
+  $("showEAs").checked=true;
+  $("showPopulation").checked=false;
+  $("showFacilities").checked=true;
+  activeAdminLevel="";activeAdminValue="";
+  clearRoute();
+  $("radiusText").textContent="Proximity analysis has not been run.";
+  refresh();fitAllEAs();
+  status("adminStatus","Filters reset. Select an LGA, district, or ward.");
+}
+
+/* Event listeners */
+$("loadEA").addEventListener("click",async()=>{
+  try { await loadEAURL(); }
+  catch(error) {
+    status("eaLoadStatus","URL loading failed: "+error.message,"error");
+    status("mapStatus","Could not load the EA GeoJSON URL.","error");
+  }
+});
+$("eaFile").addEventListener("change",async event=>{
+  const file=event.target.files?.[0];
+  if(file) await loadEAFile(file);
+});
+$("lgaFilter").addEventListener("change",onLgaChange);
+$("districtFilter").addEventListener("change",onDistrictChange);
+$("wardFilter").addEventListener("change",applyAdminFilters);
+$("applyFilters").addEventListener("click",applyAdminFilters);
+$("reset").addEventListener("click",resetFilters);
+$("clearEA").addEventListener("click",clearEAData);
+$("populationField").addEventListener("change",refresh);
+$("facilityType").addEventListener("change",refresh);
+$("facilitySearch").addEventListener("input",refresh);
+$("showEAs").addEventListener("change",refresh);
+$("showPopulation").addEventListener("change",refresh);
+$("showFacilities").addEventListener("change",refresh);
+$("basemap").addEventListener("change",event=>setBasemap(event.target.value));
+$("loadFacilities").addEventListener("click",loadFacilities);
+$("makeRoute").addEventListener("click",calculateRoute);
+$("clearRoute").addEventListener("click",clearRoute);
+$("analyseRadius").addEventListener("click",analyseProximity);
+$("zoomSelected").addEventListener("click",zoomSelected);
+$("fitGambia").addEventListener("click",fitAllEAs);
+$("exportFacilities").addEventListener("click",exportFacilities);
+$("exportEAs").addEventListener("click",exportEAs);
+$("exportSummary").addEventListener("click",exportSummary);
+
+/* Initial state */
+populateLGAs();
+refresh();
+status("eaLoadStatus","Choose a local GeoJSON file or load a hosted URL.");
+status("adminStatus","Load EA data, then select an LGA, district, or ward.");
+status("mapStatus","Waiting for EA geographic data.");
+</script>
+</body>
+</html>
